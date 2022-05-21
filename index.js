@@ -79,7 +79,7 @@ function processData(menu) {
 
 }
 
-// TODO: Implement /menu/:category. Gets all menu items in a given :category in alphabetical order.
+// TODO: Implement /menu/:category. Gets all menu items in a given :category in alphabetical order. 
 
 app.get("menu/:category", async function(req,res) {
 
