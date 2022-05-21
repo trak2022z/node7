@@ -54,35 +54,106 @@ const SERVER_ERROR_MSG = 'Something went wrong on the server.';
 
 // TODO: Implement /menu. Gets all menu items, organized by category and in alphabetical order.
 
-app.get('/test/:name', async function(req, res) {
-  try {
-    let db = await getDBConnection();
-    let something = await db.run('INSERT INTO example (name) VALUES (?);', req.params.name);
-    
-    await db.close();
-    console.log(something);
-    res.type('text').send(something);
-  } catch (err) {
-    res.status(400).type('text').send(err);
-  }
-  
-});
+
+//https://node7.tomkrok1.repl.co/menu
 
 app.get('/menu', async function(req, res) {
- 
-
+ let db = await getDBConnection();
+  try {
+    let allItems = await db.all('SELECT * FROM menu ORDER BY category, name');
+    res.json(allItems);
+    await db.close();
+  } catch(err) {
+    res.status(400);
+    res.type('text').send('error');
+  }
 });
+
+
+/*
+//Ordered version
+app.get('/menu', async function(req, res) {
+  try {
+    let db = await getDBConnection();
+    let results = {};
+    let categories = await db.all("SELECT DISTINCT category FROM menu;");
+    for (let i = 0; i < categories.length; i++) {
+      let query = "SELECT name, subcategory, price FROM menu WHERE category = ? ORDER BY category ASC";
+      let result = await db.all(query, categories[i].category);
+      results[categories[i].category] = result;
+    }
+    await db.close();
+    res.json(results);
+  } catch(err) {
+    console.error(err);
+    res.status(500);
+    res.type('text').send("error, try again later");
+  }
+});
+*/
+
+/*
+//wrong???
+app.get('/menu', async function(req, res) {
+  try {
+    let db = await getDBConnection();
+    let sql = "SELECT name, category, subcategory, price FROM menu ORDER BY name";
+    let results = await db.all(sql);
+    let ending = processData(results);
+
+    await db.close();
+    res.type("json").send(ending);
+    
+  } catch (err) {
+    res.type('text');
+    res.status(SERVER_ERROR).send(SERVER_ERROR_MSG);
+  }
+});
+
+
 
 // put in JSON nice form by category
 function processData(menu) {
   // stat with empty JSON
-
+  let results = {};
+  for (let i = 0; i < menu.length; i++) {
+    let name1 = menu[i]['name'];
+    let subcategory1 = menu[i]["subcategory"];
+    let price1 = menu[i]["price"];
+    let category = menu[i]["category"];
+    if (!result[category]) {
+      result[category] = [];
+    }
+    results[category].push({
+      name:name1, 
+      subcategory:subcategory1, 
+      price:price1
+    });
+  }
+  return results;
 }
+*/
 
-// TODO: Implement /menu/:category. Gets all menu items in a given :category in alphabetical order. 
 
-app.get("menu/:category", async function(req,res) {
+//https://node7.tomkrok1.repl.co/menu/Bakery
+// TODO: Implement /menu/:category. Gets all menu items in a given :category in alphabetical order.
 
+app.get("/menu/:category", async function(req,res) {
+  try {
+    let category = req.params['category'];
+    if (category) {
+      let db = await getDBConnection();
+      let query = "SELECT name, subcategory, price FROM menu WHERE category = ? ORDER BY category ASC";
+      let result = await db.all(query, category);
+      res.json(result);
+      await db.close();
+    } else {
+      res.status(400).type("text").send("error");
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).type("text").send("error");
+  }
 });
 
 /**
@@ -93,7 +164,7 @@ app.get("menu/:category", async function(req,res) {
  */
 async function getDBConnection() {
   const db = await sqlite.open({
-    filename: 'example.db',
+    filename: 'demo.db',
     driver: sqlite3.Database
   });
   return db;
